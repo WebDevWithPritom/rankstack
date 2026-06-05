@@ -229,7 +229,7 @@ export default function DateRangePicker({ value, onChange }: Props) {
             /* Compare tab placeholder */
             <div className="p-6 text-center text-sm text-slate-500">
               <p className="font-semibold text-slate-700 mb-1">Date comparison</p>
-              <p>Use the "Filter Comparison" panel in Advanced Filters to compare two date segments.</p>
+              <p>Use the &quot;Filter Comparison&quot; panel in Advanced Filters to compare two date segments.</p>
             </div>
           )}
         </div>

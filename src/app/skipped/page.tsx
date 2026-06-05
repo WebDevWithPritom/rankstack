@@ -162,7 +162,7 @@ export default function SkippedPage() {
               <span>Keyword Skip Rules</span>
             </h3>
             <p className="text-[11px] text-slate-400 mt-1 leading-normal">
-              Enter queries or keywords to exclude. Matches are case-insensitive and apply as exact matching or substring matching (e.g. "free" excludes any query containing the phrase "free").
+              Enter queries or keywords to exclude. Matches are case-insensitive and apply as exact matching or substring matching (e.g. &quot;free&quot; excludes any query containing the phrase &quot;free&quot;).
             </p>
           </div>
 
