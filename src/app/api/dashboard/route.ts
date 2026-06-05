@@ -314,21 +314,35 @@ export async function GET(req: NextRequest) {
 
       // Chart daily points
       const chartMap = new Map<string, { date: string; clicksA: number; impressionsA: number; posSumA: number; countA: number; clicksB: number; impressionsB: number; posSumB: number; countB: number }>();
+      
+      const cursor = new Date(currentStart);
+      const end = new Date(maxDateStr);
+      while (cursor <= end) {
+        const dateStr = cursor.toISOString().split('T')[0];
+        chartMap.set(dateStr, {
+          date: dateStr, clicksA: 0, impressionsA: 0, posSumA: 0, countA: 0,
+          clicksB: 0, impressionsB: 0, posSumB: 0, countB: 0
+        });
+        cursor.setDate(cursor.getDate() + 1);
+      }
+
       rankingsA.forEach(r => {
-        const ext = chartMap.get(r.date) || { date: r.date, clicksA: 0, impressionsA: 0, posSumA: 0, countA: 0, clicksB: 0, impressionsB: 0, posSumB: 0, countB: 0 };
-        ext.clicksA += r.clicks;
-        ext.impressionsA += r.impressions;
-        ext.posSumA += r.position * r.impressions;
-        ext.countA += 1;
-        chartMap.set(r.date, ext);
+        const ext = chartMap.get(r.date);
+        if (ext) {
+          ext.clicksA += r.clicks;
+          ext.impressionsA += r.impressions;
+          ext.posSumA += r.position * r.impressions;
+          ext.countA += 1;
+        }
       });
       rankingsB.forEach(r => {
-        const ext = chartMap.get(r.date) || { date: r.date, clicksA: 0, impressionsA: 0, posSumA: 0, countA: 0, clicksB: 0, impressionsB: 0, posSumB: 0, countB: 0 };
-        ext.clicksB += r.clicks;
-        ext.impressionsB += r.impressions;
-        ext.posSumB += r.position * r.impressions;
-        ext.countB += 1;
-        chartMap.set(r.date, ext);
+        const ext = chartMap.get(r.date);
+        if (ext) {
+          ext.clicksB += r.clicks;
+          ext.impressionsB += r.impressions;
+          ext.posSumB += r.position * r.impressions;
+          ext.countB += 1;
+        }
       });
 
       const chartData = Array.from(chartMap.values()).map(d => {
@@ -680,6 +694,17 @@ export async function GET(req: NextRequest) {
     // 3. Prepare Chart Data (Group current rankings by date)
     const chartMap = new Map<string, { date: string; clicks: number; impressions: number; weightedPosSum: number; count: number; clicksPrior: number; impressionsPrior: number; weightedPosSumPrior: number; countPrior: number }>();
     
+    const cursor = new Date(currentStart);
+    const end = new Date(maxDateStr);
+    while (cursor <= end) {
+      const dateStr = cursor.toISOString().split('T')[0];
+      chartMap.set(dateStr, {
+        date: dateStr, clicks: 0, impressions: 0, weightedPosSum: 0, count: 0,
+        clicksPrior: 0, impressionsPrior: 0, weightedPosSumPrior: 0, countPrior: 0
+      });
+      cursor.setDate(cursor.getDate() + 1);
+    }
+
     // Fill active period values
     if (usePropertyTotals) {
       currentPropTotals.forEach(t => {
@@ -689,11 +714,6 @@ export async function GET(req: NextRequest) {
           existing.impressions += t.impressions;
           existing.weightedPosSum += t.position * t.impressions;
           existing.count += 1;
-        } else {
-          chartMap.set(t.date, {
-            date: t.date, clicks: t.clicks, impressions: t.impressions, weightedPosSum: t.position * t.impressions, count: 1,
-            clicksPrior: 0, impressionsPrior: 0, weightedPosSumPrior: 0, countPrior: 0
-          });
         }
       });
     } else {
@@ -704,11 +724,6 @@ export async function GET(req: NextRequest) {
           existing.impressions += r.impressions;
           existing.weightedPosSum += r.position * r.impressions;
           existing.count += 1;
-        } else {
-          chartMap.set(r.date, {
-            date: r.date, clicks: r.clicks, impressions: r.impressions, weightedPosSum: r.position * r.impressions, count: 1,
-            clicksPrior: 0, impressionsPrior: 0, weightedPosSumPrior: 0, countPrior: 0
-          });
         }
       });
     }
@@ -1090,7 +1105,7 @@ export async function GET(req: NextRequest) {
 
     const googleUpdatesWithImpact = await Promise.all(
       GOOGLE_UPDATES
-        .filter(upd => upd.startDate <= maxDateStr && (!upd.endDate || upd.endDate >= currentStart))
+        .filter(upd => upd.startDate <= maxDateStr)
         .map(async upd => {
           const beforeStart = getOffsetDate(upd.startDate, -14);
           const beforeEnd = getOffsetDate(upd.startDate, -1);

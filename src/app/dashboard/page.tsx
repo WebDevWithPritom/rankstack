@@ -266,11 +266,67 @@ export default function DashboardPage() {
     cannibalized = [], 
     brandedSplit = {}, 
     googleUpdates = [], 
-    annotations = [], 
+    annotations: serverAnnotations = [], 
     countriesList = [], 
     asOfDate = '',
     recentlyUpdatedKeywords = []
   } = data || {};
+
+  // Local storage annotations sync
+  const [localAnnotations, setLocalAnnotations] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && activeProjectId) {
+      const stored = localStorage.getItem(`rankstack_annotations_${activeProjectId}`);
+      if (stored) {
+        try {
+          setLocalAnnotations(JSON.parse(stored));
+        } catch (e) {
+          console.error('Failed to parse local annotations', e);
+        }
+      } else {
+        setLocalAnnotations([]);
+      }
+    }
+  }, [activeProjectId]);
+
+  const annotations = useMemo(() => {
+    const map = new Map<string, any>();
+    serverAnnotations.forEach((ann: any) => {
+      map.set(ann.id, ann);
+    });
+    localAnnotations.forEach((ann: any) => {
+      map.set(ann.id, ann);
+    });
+    return Array.from(map.values());
+  }, [serverAnnotations, localAnnotations]);
+
+  const rightMargin = useMemo(() => {
+    return 10 + 
+      (showImpressions ? 45 : 0) + 
+      (showCtr ? 45 : 0) + 
+      (showPosition ? 40 : 0);
+  }, [showImpressions, showCtr, showPosition]);
+
+  const leftOffset = useMemo(() => {
+    return 10 + (showClicks ? 40 : 0);
+  }, [showClicks]);
+
+  const activeYAxisId = useMemo(() => {
+    if (showClicks) return "left";
+    if (showImpressions) return "right";
+    if (showCtr) return "ctr";
+    return "pos";
+  }, [showClicks, showImpressions, showCtr, showPosition]);
+
+  const visibleUpdates = useMemo(() => {
+    if (!chartData || chartData.length === 0) return [];
+    const minDate = chartData[0].date;
+    const maxDate = chartData[chartData.length - 1].date;
+    return googleUpdates.filter((upd: any) => 
+      upd.startDate <= maxDate && (!upd.endDate || upd.endDate >= minDate)
+    );
+  }, [chartData, googleUpdates]);
 
   const formatPercent = (val: number) => `${(val * 100).toFixed(2)}%`;
 
@@ -455,6 +511,17 @@ export default function DashboardPage() {
         })
       });
       if (!res.ok) throw new Error('Failed to save annotation');
+      
+      // Save locally as backup / stateless persistence
+      try {
+        const savedAnn = await res.json();
+        const updatedLocal = [...localAnnotations, savedAnn];
+        setLocalAnnotations(updatedLocal);
+        localStorage.setItem(`rankstack_annotations_${activeProjectId}`, JSON.stringify(updatedLocal));
+      } catch (err) {
+        console.error('Failed to sync to local storage:', err);
+      }
+
       toast.success('Annotation saved!', { id: toastId });
       setIsAnnotationModalOpen(false);
       setAnnotationTitle('');
@@ -476,6 +543,16 @@ export default function DashboardPage() {
         method: 'DELETE'
       });
       if (!res.ok) throw new Error('Failed to delete annotation');
+
+      // Delete locally
+      try {
+        const updatedLocal = localAnnotations.filter((a: any) => a.id !== annId);
+        setLocalAnnotations(updatedLocal);
+        localStorage.setItem(`rankstack_annotations_${activeProjectId}`, JSON.stringify(updatedLocal));
+      } catch (err) {
+        console.error('Failed to delete from local storage:', err);
+      }
+
       toast.success('Annotation deleted!', { id: toastId });
       refetch();
     } catch (err: any) {
@@ -1293,11 +1370,10 @@ export default function DashboardPage() {
             )}
           </div>
         </div>
-
         {/* ── CHART SECTION: GSC Guardian style ── */}
         <div className="space-y-0">
 
-          {/* ─── MAIN CHART: Clicks (left) + Impressions (right) ─── */}
+          {/* ─── UNIFIED CHART: Clicks (left) + Impressions, CTR, Position (right) ─── */}
           <div className="h-[300px] w-full relative bg-white">
 
             {isMounted && chartData.length > 0 ? (
@@ -1305,7 +1381,7 @@ export default function DashboardPage() {
                 <LineChart
                   data={chartData}
                   onClick={handleChartClick}
-                  margin={{ top: 10, right: 60, left: 10, bottom: 5 }}
+                  margin={{ top: 10, right: rightMargin, left: 10, bottom: 5 }}
                 >
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                   <XAxis
@@ -1316,36 +1392,71 @@ export default function DashboardPage() {
                   />
 
                   {/* ── LEFT: Clicks ── */}
-                  <YAxis
-                    yAxisId="left"
-                    orientation="left"
-                    width={48}
-                    tick={{ fill: '#6366f1', fontSize: 10, fontWeight: 600 }}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={formatCompactNumber}
-                    label={{ value: 'Clicks', position: 'insideTopLeft', offset: 0, dy: -8, dx: 4, fill: '#6366f1', fontSize: 10, fontWeight: 700 }}
-                  />
+                  {showClicks && (
+                    <YAxis
+                      yAxisId="left"
+                      orientation="left"
+                      width={40}
+                      tick={{ fill: '#6366f1', fontSize: 10, fontWeight: 600 }}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={formatCompactNumber}
+                      label={{ value: 'Clicks', position: 'insideTopLeft', offset: 0, dy: -8, dx: 4, fill: '#6366f1', fontSize: 10, fontWeight: 700 }}
+                    />
+                  )}
 
                   {/* ── RIGHT: Impressions ── */}
-                  <YAxis
-                    yAxisId="right"
-                    orientation="right"
-                    width={52}
-                    tick={{ fill: '#a855f7', fontSize: 10, fontWeight: 600 }}
-                    tickLine={false}
-                    axisLine={false}
-                    tickFormatter={formatCompactNumber}
-                    label={{ value: 'Impressions', position: 'insideTopRight', offset: 0, dy: -8, dx: -4, fill: '#a855f7', fontSize: 10, fontWeight: 700 }}
-                  />
+                  {showImpressions && (
+                    <YAxis
+                      yAxisId="right"
+                      orientation="right"
+                      width={45}
+                      tick={{ fill: '#a855f7', fontSize: 10, fontWeight: 600 }}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={formatCompactNumber}
+                      label={{ value: 'Impressions', position: 'insideTopRight', offset: 0, dy: -8, dx: -4, fill: '#a855f7', fontSize: 10, fontWeight: 700 }}
+                    />
+                  )}
+
+                  {/* ── RIGHT: CTR ── */}
+                  {showCtr && (
+                    <YAxis
+                      yAxisId="ctr"
+                      orientation="right"
+                      width={45}
+                      dx={showImpressions ? 45 : 0}
+                      tick={{ fill: '#10b981', fontSize: 10, fontWeight: 600 }}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(v) => `${(v * 100).toFixed(1)}%`}
+                      label={{ value: 'CTR', position: 'insideTopRight', offset: 0, dy: -8, dx: showImpressions ? 41 : -4, fill: '#10b981', fontSize: 10, fontWeight: 700 }}
+                    />
+                  )}
+
+                  {/* ── RIGHT: Position ── */}
+                  {showPosition && (
+                    <YAxis
+                      yAxisId="pos"
+                      orientation="right"
+                      width={40}
+                      dx={(showImpressions ? 45 : 0) + (showCtr ? 45 : 0)}
+                      reversed={true}
+                      domain={[1, 'auto']}
+                      tick={{ fill: '#f59e0b', fontSize: 10, fontWeight: 600 }}
+                      tickLine={false}
+                      axisLine={false}
+                      label={{ value: 'Position', position: 'insideTopRight', offset: 0, dy: -8, dx: (showImpressions ? 41 : -4) + (showCtr ? 45 : 0), fill: '#f59e0b', fontSize: 10, fontWeight: 700 }}
+                    />
+                  )}
 
                   <Tooltip content={<CustomChartTooltip googleUpdates={googleUpdates} annotations={annotations} />} />
 
                   {/* ── Google Update Shaded Areas ── */}
-                  {googleUpdates.map((upd: any) => (
+                  {visibleUpdates.map((upd: any) => (
                     <ReferenceArea
                       key={upd.id}
-                      yAxisId="left"
+                      yAxisId={activeYAxisId}
                       x1={upd.startDate}
                       x2={upd.endDate || upd.startDate}
                       fill={upd.type === 'spam' ? 'rgba(251,191,36,0.12)' : 'rgba(239,68,68,0.12)'}
@@ -1354,10 +1465,10 @@ export default function DashboardPage() {
                   ))}
 
                   {/* ── Vertical dashed lines at update boundaries ── */}
-                  {googleUpdates.map((upd: any) => (
+                  {visibleUpdates.map((upd: any) => (
                     <ReferenceLine
                       key={`vl-${upd.id}`}
-                      yAxisId="left"
+                      yAxisId={activeYAxisId}
                       x={upd.startDate}
                       stroke={upd.type === 'spam' ? '#f59e0b' : '#ef4444'}
                       strokeDasharray="4 3"
@@ -1370,7 +1481,7 @@ export default function DashboardPage() {
                   {annotations.map((ann: any) => (
                     <ReferenceLine
                       key={ann.id}
-                      yAxisId="left"
+                      yAxisId={activeYAxisId}
                       x={ann.date}
                       stroke="#6366f1"
                       strokeDasharray="3 3"
@@ -1402,6 +1513,30 @@ export default function DashboardPage() {
                       name={isApiCompareMode ? `Impressions B (${apiCompareValueB})` : 'Impressions (Prior)'}
                       stroke="#d8b4fe" strokeWidth={1.5} strokeDasharray="5 3" dot={false} />
                   )}
+
+                  {/* ── CTR line ── */}
+                  {showCtr && (
+                    <Line yAxisId="ctr" type="monotone" dataKey="ctr"
+                      name={isApiCompareMode ? `CTR A (${apiCompareValueA})` : 'CTR'}
+                      stroke="#10b981" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: '#10b981' }} />
+                  )}
+                  {(compareMode || isApiCompareMode) && showCtr && (
+                    <Line yAxisId="ctr" type="monotone" dataKey="ctrPrior"
+                      name={isApiCompareMode ? `CTR B (${apiCompareValueB})` : 'CTR (Prior)'}
+                      stroke="#6ee7b7" strokeWidth={1.5} strokeDasharray="5 3" dot={false} />
+                  )}
+
+                  {/* ── Position line ── */}
+                  {showPosition && (
+                    <Line yAxisId="pos" type="monotone" dataKey="position"
+                      name={isApiCompareMode ? `Avg Position A (${apiCompareValueA})` : 'Avg Position'}
+                      stroke="#f59e0b" strokeWidth={2} dot={false} activeDot={{ r: 4, fill: '#f59e0b' }} />
+                  )}
+                  {(compareMode || isApiCompareMode) && showPosition && (
+                    <Line yAxisId="pos" type="monotone" dataKey="positionPrior"
+                      name={isApiCompareMode ? `Avg Position B (${apiCompareValueB})` : 'Avg Position (Prior)'}
+                      stroke="#fde68a" strokeWidth={1.5} strokeDasharray="5 3" dot={false} />
+                  )}
                 </LineChart>
               </ResponsiveContainer>
             ) : (
@@ -1412,17 +1547,27 @@ export default function DashboardPage() {
           </div>
 
           {/* ─── INCIDENT BADGES: rendered below the chart as a timeline row ─── */}
-          {isMounted && chartData.length > 0 && googleUpdates.length > 0 && (
-            <div className="relative h-8 mx-[58px] border-t border-slate-100 bg-slate-50/60 rounded-b-xl overflow-hidden">
+          {isMounted && chartData.length > 0 && visibleUpdates.length > 0 && (
+            <div 
+              className="relative h-8 border-t border-slate-100 bg-slate-50/60 rounded-b-xl overflow-hidden"
+              style={{
+                marginLeft: `${leftOffset}px`,
+                marginRight: `${rightMargin}px`
+              }}
+            >
               {(() => {
-                // Find x positions by matching dates to chartData indices
                 const total = chartData.length;
                 if (total < 2) return null;
-                return googleUpdates.map((upd: any, idx: number) => {
+                return visibleUpdates.map((upd: any) => {
                   const dataIdx = chartData.findIndex((d: any) => d.date === upd.startDate);
                   if (dataIdx < 0) return null;
                   const pct = (dataIdx / (total - 1)) * 100;
                   const isSpam = upd.type === 'spam';
+
+                  // Map to the row index in the googleUpdates table (1-based, descending)
+                  const tableIdx = googleUpdates.findIndex((u: any) => u.id === upd.id);
+                  const badgeNum = tableIdx >= 0 ? tableIdx + 1 : '?';
+
                   return (
                     <button
                       key={upd.id}
@@ -1436,114 +1581,59 @@ export default function DashboardPage() {
                         boxShadow: `0 0 0 1px ${isSpam ? '#f59e0b' : '#ef4444'}40`,
                       }}
                     >
-                      {idx + 1}
+                      {badgeNum}
                     </button>
                   );
                 });
               })()}
               <div className="absolute inset-0 flex items-center justify-start pl-2 text-[9px] text-slate-400 font-medium pointer-events-none">
-                Google Updates
+                Google Updates & Incidents
               </div>
             </div>
           )}
 
-          {/* ─── SECONDARY CHART: CTR + Avg Position (only when toggled) ─── */}
-          {isMounted && chartData.length > 0 && (showCtr || showPosition) && (
-            <div className="mt-2 h-[140px] w-full relative bg-white rounded-xl border border-slate-100">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={chartData}
-                  margin={{ top: 8, right: 60, left: 10, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                  <XAxis dataKey="date" tick={{ fill: '#94a3b8', fontSize: 9 }} tickLine={false} axisLine={false} />
-
-                  {/* CTR axis — left */}
-                  {showCtr && (
-                    <YAxis yAxisId="ctr" orientation="left" width={48}
-                      tick={{ fill: '#10b981', fontSize: 9, fontWeight: 600 }}
-                      tickLine={false} axisLine={false}
-                      domain={[0, 'auto']}
-                      tickFormatter={(v) => `${(v * 100).toFixed(1)}%`}
-                      label={{ value: 'CTR', position: 'insideTopLeft', offset: 0, dy: -6, dx: 4, fill: '#10b981', fontSize: 9, fontWeight: 700 }}
-                    />
-                  )}
-
-                  {/* Position axis — right (inverted: rank 1 = best = top) */}
-                  {showPosition && (
-                    <YAxis yAxisId="pos" orientation="right" width={40}
-                      reversed={true} domain={[1, 'auto']}
-                      tick={{ fill: '#f59e0b', fontSize: 9, fontWeight: 600 }}
-                      tickLine={false} axisLine={false}
-                      label={{ value: 'Position', position: 'insideTopRight', offset: 0, dy: -6, dx: -4, fill: '#f59e0b', fontSize: 9, fontWeight: 700 }}
-                    />
-                  )}
-
-                  {/* Update shading in secondary chart */}
-                  {googleUpdates.map((upd: any) => (
-                    <ReferenceArea key={upd.id}
-                      yAxisId={showCtr ? 'ctr' : 'pos'}
-                      x1={upd.startDate} x2={upd.endDate || upd.startDate}
-                      fill={upd.type === 'spam' ? 'rgba(251,191,36,0.10)' : 'rgba(239,68,68,0.10)'}
-                      stroke="none" />
-                  ))}
-
-                  <Tooltip formatter={(val: any, name: any) =>
-                    String(name).includes('CTR') ? `${(Number(val) * 100).toFixed(2)}%` : Number(val).toFixed(1)
-                  } />
-
-                  {showCtr && (
-                    <Line yAxisId="ctr" type="monotone" dataKey="ctr"
-                      name="CTR" stroke="#10b981" strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} />
-                  )}
-                  {(compareMode || isApiCompareMode) && showCtr && (
-                    <Line yAxisId="ctr" type="monotone" dataKey="ctrPrior"
-                      name="CTR (Prior)" stroke="#6ee7b7" strokeWidth={1} strokeDasharray="4 4" dot={false} />
-                  )}
-
-                  {showPosition && (
-                    <Line yAxisId="pos" type="monotone" dataKey="position"
-                      name="Avg Position" stroke="#f59e0b" strokeWidth={1.5} dot={false} activeDot={{ r: 3 }} />
-                  )}
-                  {(compareMode || isApiCompareMode) && showPosition && (
-                    <Line yAxisId="pos" type="monotone" dataKey="positionPrior"
-                      name="Avg Position (Prior)" stroke="#fde68a" strokeWidth={1} strokeDasharray="4 4" dot={false} />
-                  )}
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          )}
         </div>
 
         {/* ─── CHART LEGEND ─── */}
         {isMounted && chartData.length > 0 && (
           <div className="mt-3 pt-3 border-t border-slate-100 flex flex-wrap gap-x-5 gap-y-2 items-center justify-center text-[10px] text-slate-500">
             <span className="flex items-center gap-1.5">
-              <span className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-red-500 text-white text-[8px] font-bold shrink-0">1</span>
-              <span className="font-semibold">Core Update · <span className="text-amber-500 font-semibold">2</span> Spam/Incident — click for details</span>
+              <span className="inline-block w-2.5 h-2.5 rounded-full bg-red-500 shrink-0" />
+              <span>Core Update</span>
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="inline-block w-2.5 h-2.5 rounded-full bg-amber-500 shrink-0" />
+              <span>Spam / Incident</span>
+            </span>
+            <span className="flex items-center gap-1.5 text-slate-400">
+              <span>(Click numbered badge on timeline for details)</span>
             </span>
             <span className="flex items-center gap-1.5">
               <span className="inline-block w-8 h-3 rounded-sm bg-red-400/15 border border-red-400/30 shrink-0" />
               <span>Update period shading</span>
             </span>
-            <span className="flex items-center gap-1.5">
-              <span className="inline-block w-5 h-0.5 bg-indigo-500 shrink-0" />
-              <span className="text-indigo-600 font-semibold">Clicks (left)</span>
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="inline-block w-5 h-0.5 bg-purple-500 shrink-0" />
-              <span className="text-purple-600 font-semibold">Impressions (right)</span>
-            </span>
+            {showClicks && (
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block w-5 h-0.5 bg-indigo-500 shrink-0" />
+                <span className="text-indigo-600 font-semibold">Clicks (left)</span>
+              </span>
+            )}
+            {showImpressions && (
+              <span className="flex items-center gap-1.5">
+                <span className="inline-block w-5 h-0.5 bg-purple-500 shrink-0" />
+                <span className="text-purple-600 font-semibold">Impressions (right)</span>
+              </span>
+            )}
             {showCtr && (
               <span className="flex items-center gap-1.5">
                 <span className="inline-block w-5 h-0.5 bg-emerald-500 shrink-0" />
-                <span className="text-emerald-600 font-semibold">CTR (chart below)</span>
+                <span className="text-emerald-600 font-semibold">CTR (right)</span>
               </span>
             )}
             {showPosition && (
               <span className="flex items-center gap-1.5">
                 <span className="inline-block w-5 h-0.5 bg-amber-500 shrink-0" />
-                <span className="text-amber-600 font-semibold">Position (chart below, inverted)</span>
+                <span className="text-amber-600 font-semibold">Position (right, inverted)</span>
               </span>
             )}
           </div>
