@@ -1,101 +1,94 @@
-import Image from "next/image";
+import React from 'react';
+import Link from 'next/link';
+import { ArrowRight, LayoutDashboard, Settings, TrendingUp, ShieldCheck, Database, CalendarDays, History } from 'lucide-react';
 
 export default function Home() {
-  return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="https://nextjs.org/icons/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+  const features = [
+    {
+      name: 'Google Search Console Mirror',
+      description: 'Accurate keyword metrics that match GSC property totals down to 2% precision by using proper comparison periods and filters.',
+      icon: ShieldCheck
+    },
+    {
+      name: 'Cannibalization & Opportunity matrix',
+      description: 'Flag pages ranking for identical search terms on the same day. Highlights winning URLs so you can optimize CTR.',
+      icon: Database
+    },
+    {
+      name: 'Precomputed Core Rollups',
+      description: 'Lightning-fast dashboard queries using precomputed keyword rolling metrics over 1d, 7d, 30d, 90d, and 365d ranges.',
+      icon: History
+    },
+    {
+      name: 'Core Updates Correlation',
+      description: 'Compare clicks and positions 14 days before vs 14 days after official Google Core, Helpful Content, and Spam algorithm updates.',
+      icon: CalendarDays
+    }
+  ];
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="https://nextjs.org/icons/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:min-w-44"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  return (
+    <div className="flex flex-col items-center justify-center py-12 md:py-24 relative overflow-hidden">
+      
+      {/* Background radial effects */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-indigo-500/5 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-10 left-1/4 w-[350px] h-[350px] bg-purple-500/5 rounded-full blur-[100px] pointer-events-none" />
+
+      {/* Hero Section */}
+      <div className="text-center max-w-3xl px-4 z-10">
+        <div className="inline-flex items-center space-x-2 rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs text-indigo-700 font-semibold mb-6 animate-pulse">
+          <TrendingUp className="h-3.5 w-3.5" />
+          <span>SEO Enterprise SaaS v1.0</span>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="https://nextjs.org/icons/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+        <h1 className="text-4xl sm:text-6xl font-extrabold tracking-tight text-slate-900 mb-6 leading-tight">
+          SEO Teams Live in <br />
+          <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
+            Google Search Console
+          </span>
+        </h1>
+
+        <p className="text-lg sm:text-xl text-slate-650 font-medium leading-relaxed mb-10 max-w-2xl mx-auto">
+          Keyword rank tracking that mirrors Google Search Console Performance — same clicks, impressions, and query data — with a fast dashboard for every keyword, country, and date range.
+        </p>
+
+        <div className="flex flex-col sm:flex-row justify-center items-center gap-4">
+          <Link
+            href="/dashboard"
+            className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-6 py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white font-semibold rounded-xl shadow-lg shadow-indigo-500/20 transition-all-200 hover:-translate-y-0.5"
+          >
+            <LayoutDashboard className="h-5 w-5" />
+            <span>Open SEO Dashboard</span>
+            <ArrowRight className="h-4 w-4" />
+          </Link>
+
+          <Link
+            href="/settings"
+            className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 px-6 py-3.5 bg-white hover:bg-slate-50 text-slate-700 font-semibold rounded-xl border border-slate-200 shadow-sm transition-all-200 hover:-translate-y-0.5"
+          >
+            <Settings className="h-5 w-5" />
+            <span>Settings & Connections</span>
+          </Link>
+        </div>
+      </div>
+
+      {/* Features Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-5xl mt-24 px-4 z-10">
+        {features.map((feature, idx) => {
+          const Icon = feature.icon;
+          return (
+            <div key={idx} className="glass-card rounded-2xl p-6 flex items-start space-x-4">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-indigo-50 border border-indigo-100 text-indigo-600">
+                <Icon className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-805 mb-2">{feature.name}</h3>
+                <p className="text-slate-550 text-sm leading-relaxed">{feature.description}</p>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
     </div>
   );
 }
