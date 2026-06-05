@@ -13,6 +13,10 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: 'RankStack - Keyword Rank Tracking & GSC Performance Engine',
   description: 'Keyword rank tracking that mirrors Google Search Console Performance with a fast dashboard for every keyword, country, and date range.',
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function RootLayout({

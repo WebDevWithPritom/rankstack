@@ -14,7 +14,9 @@ export function middleware(req: NextRequest) {
       try {
         const [u, p] = atob(authValue).split(':');
         if (u === user && p === password) {
-          return NextResponse.next();
+          const response = NextResponse.next();
+          response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+          return response;
         }
       } catch (e) {
         // Decode error
@@ -25,11 +27,14 @@ export function middleware(req: NextRequest) {
       status: 401,
       headers: {
         'WWW-Authenticate': 'Basic realm="Secure Area"',
+        'X-Robots-Tag': 'noindex, nofollow',
       },
     });
   }
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+  response.headers.set('X-Robots-Tag', 'noindex, nofollow');
+  return response;
 }
 
 export const config = {
