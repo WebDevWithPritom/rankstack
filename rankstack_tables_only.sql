@@ -3004,10 +3004,10 @@ CREATE TABLE `wp_rankstack_projects` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_520_ci;
 
--- Dumping data for `wp_rankstack_projects` (2 rows)
+-- Dumping data for `wp_rankstack_projects` (1 row)
 INSERT INTO `wp_rankstack_projects` (`id`, `name`, `domain`, `gsc_property`, `target_country`, `created_at`, `updated_at`) VALUES
-('proj_003258cf6942', 'Main Website', 'lightcyan-chough-270464.hostingersite.com', '', 'US', '2026-08-24 12:57:33', '2026-08-24 12:57:33'),
 ('proj_2e6458480a81', 'WPoets', 'wpoets.com', 'https://www.wpoets.com/', 'US', '2026-08-26 08:05:49', '2026-08-26 11:14:11');
+
 
 -- ----------------------------------------------------
 -- Table structure for `wp_rankstack_rankings`
