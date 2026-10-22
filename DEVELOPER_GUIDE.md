@@ -400,15 +400,38 @@ Every developer working on RankStack follows this structured workflow:
   cd rank-stack
   ```
 
-### Step 1.1: Local Database Setup (Sample Data Included)
-The repository includes a complete database dump in the root directory: `rankstack_tables_only.sql`.
-* **What it contains:** All 11 `wp_rankstack_*` tables pre-loaded with realistic sample data (projects, keywords, rankings, and rollup KPIs). This allows developers to test charts and tables immediately without needing a live Google Search Console account.
-* **How to import:**
-  1. Open your local database tool (**phpMyAdmin**, **HeidiSQL**, or **TablePlus**).
-  2. Select your local WordPress database (e.g. `wordpress` or `rankstack_dev`).
-  3. Click **Import**, choose the file `rankstack_tables_only.sql`, and click **Go**.
-  4. In WordPress Admin, navigate to **Plugins** and activate **RankStack**.
-  5. Open the **RankStack** menu; all dashboards and keyword grids will load immediately.
+### Step 1.1: Local Database Setup (Pre-loaded Sample Data)
+You do NOT need a live Google Search Console account or live API credentials to develop locally. A full database dump containing 11 custom tables and real time-series SEO data is included in the root of the repository: **`rankstack_tables_only.sql`**.
+
+#### Option A: Using LocalWP (Recommended)
+1. Open your **LocalWP** app and select your local WordPress site.
+2. Click the **Database** tab at the top.
+3. Click **Open Adminer** (or open phpMyAdmin).
+4. In Adminer, click **Import** in the left sidebar menu.
+5. In the "File upload" section, click **Choose Files** and select `rankstack_tables_only.sql` from your cloned plugin folder.
+6. Click **Execute**. All tables and sample data will be imported immediately.
+
+#### Option B: Using phpMyAdmin / Laragon / XAMPP
+1. Open **phpMyAdmin** in your browser (`http://localhost/phpmyadmin`).
+2. Select your WordPress database from the left sidebar (e.g. `wordpress` or `local`).
+3. Click the **Import** tab in the top navigation bar.
+4. Click **Choose File** and select `rankstack_tables_only.sql`.
+5. Scroll down and click **Import** (or **Go**).
+
+#### Option C: Using MySQL Command Line
+```bash
+mysql -u root -p local_wordpress_db < rankstack_tables_only.sql
+```
+
+#### How to Verify the Database Setup
+1. Log in to your local WordPress Admin (`/wp-admin`).
+2. Navigate to **Plugins** and ensure **RankStack** is activated.
+3. Click **RankStack** in the admin sidebar.
+4. Verify that:
+   * The top KPI scorecards (Total Clicks, Impressions, Average Position) display numbers.
+   * The 90-day timeline chart renders with historical trend lines.
+   * The **Queries / Keywords** table displays queries for `wpoets.com`.
+   * The **Incidents** overlay displays historical Google algorithm updates on the chart.
 
 ### Step 2: Branching Strategy
 * **`master` / `main`**: Production-ready code. Never commit directly to master.
