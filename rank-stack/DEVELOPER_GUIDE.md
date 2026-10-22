@@ -400,6 +400,16 @@ Every developer working on RankStack follows this structured workflow:
   cd rank-stack
   ```
 
+### Step 1.1: Local Database Setup (Sample Data Included)
+The repository includes a complete database dump in the root directory: `rankstack_tables_only.sql`.
+* **What it contains:** All 11 `wp_rankstack_*` tables pre-loaded with realistic sample data (projects, keywords, rankings, and rollup KPIs). This allows developers to test charts and tables immediately without needing a live Google Search Console account.
+* **How to import:**
+  1. Open your local database tool (**phpMyAdmin**, **HeidiSQL**, or **TablePlus**).
+  2. Select your local WordPress database (e.g. `wordpress` or `rankstack_dev`).
+  3. Click **Import**, choose the file `rankstack_tables_only.sql`, and click **Go**.
+  4. In WordPress Admin, navigate to **Plugins** and activate **RankStack**.
+  5. Open the **RankStack** menu; all dashboards and keyword grids will load immediately.
+
 ### Step 2: Branching Strategy
 * **`master` / `main`**: Production-ready code. Never commit directly to master.
 * **`feature/<feature-name>`**: For new features (e.g. `feature/dataforseo-backlinks`).
